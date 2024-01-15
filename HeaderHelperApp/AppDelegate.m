@@ -87,20 +87,28 @@
     id obj = [[self.runtimeController selectedObjects] firstObject];
     BOOL processDaemons = [[NSUserDefaults standardUserDefaults] boolForKey:@"processDaemons"];
     DLog(@"obj: %@ pd: %d", obj, processDaemons);
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self.progressBar startAnimation:nil];
-        self.progressLabel.stringValue = [NSString stringWithFormat:@"Processing %@...", obj[@"name"]];
-        sender.enabled = false;
-    });
-    
-    [[HelperClass sharedInstance] setSkipDaemons:!processDaemons];
-    [[HelperClass sharedInstance] processRootFolder:obj[@"path"] withCompletion:^(BOOL success) {
+    NSOpenPanel *openPanel = [NSOpenPanel openPanel];
+    openPanel.canChooseFiles = NO;
+    openPanel.canChooseDirectories = YES;
+    openPanel.canCreateDirectories = YES;
+    openPanel.allowsMultipleSelection = NO;
+    NSModalResponse result = [openPanel runModal];
+    NSURL *outputURL = openPanel.URL;
+    if (result == NSModalResponseOK && outputURL) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self.progressBar stopAnimation:nil];
-            self.progressLabel.stringValue = @"";
-            sender.enabled = true;
+            [self.progressBar startAnimation:nil];
+            self.progressLabel.stringValue = [NSString stringWithFormat:@"Processing %@...", obj[@"name"]];
+            sender.enabled = false;
         });
-    }];
+        [[HelperClass sharedInstance] setSkipDaemons:!processDaemons];
+        [[HelperClass sharedInstance] processRootFolder:obj[@"path"] withOutputFolder:outputURL.path withCompletion:^(BOOL success) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.progressBar stopAnimation:nil];
+                self.progressLabel.stringValue = @"";
+                sender.enabled = true;
+            });
+        }];
+    }
     
 }
 

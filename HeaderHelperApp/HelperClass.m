@@ -40,18 +40,20 @@
 
 - (NSDictionary *)libraryRuntimes {
     NSFileManager *man = [NSFileManager defaultManager];
-    NSString *libPath = @"/Library/Developer/CoreSimulator/Profiles/Runtimes";
-    if (![man fileExistsAtPath:libPath]){
-        return [[self driveArray] firstObject];
-    }
-    NSArray *runtimes = [man contentsOfDirectoryAtPath:libPath error:nil];
     __block NSMutableArray *fullRuntimes = [NSMutableArray new];
-    [runtimes enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        NSDictionary *rt = [self runtimeAtPath:[libPath stringByAppendingPathComponent:obj]];
-        if (rt) {
-            [fullRuntimes addObject:rt];
-        }
-    }];
+    NSArray *runtimes = nil;
+    NSString *libPath = @"/Library/Developer/CoreSimulator/Profiles/Runtimes";
+    if ([man fileExistsAtPath:libPath]){
+        runtimes = [man contentsOfDirectoryAtPath:libPath error:nil];
+        [runtimes enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            NSDictionary *rt = [self runtimeAtPath:[libPath stringByAppendingPathComponent:obj]];
+            if (rt) {
+                [fullRuntimes addObject:rt];
+            }
+        }];
+    }
+    
+    
     NSArray *images = [self images];
     DLog(@"images: %@", images);
     NSString *volumesPath = @"/Library/Developer/CoreSimulator/Volumes";
@@ -319,8 +321,11 @@
     });
 }
 
+- (void)processRootFolder:(NSString *)rootFolder withCompletion:(void (^)(BOOL))block {
+    [self processRootFolder:rootFolder withOutputFolder:[NSHomeDirectory() stringByAppendingPathComponent:@"Desktop/export"] withCompletion:block];
+}
 
-- (void)processRootFolder:(NSString *)rootFolder withCompletion:(void(^)(BOOL success))block {
+- (void)processRootFolder:(NSString *)rootFolder withOutputFolder:(NSString *)selectedOutputFolder withCompletion:(void(^)(BOOL success))block {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         
         NSString *systemVersionFile = [rootFolder stringByAppendingPathComponent:@"System/Library/CoreServices/SystemVersion.plist"];
@@ -328,7 +333,7 @@
         NSString *productName = sysVers[@"ProductName"];
         NSString *productVersion = sysVers[@"ProductVersion"];
         NSString *folderName = [[NSString stringWithFormat:@"%@_%@", productName, productVersion] stringByReplacingOccurrencesOfString:@" " withString:@"_"];
-        NSString *outputFolder = [[NSHomeDirectory() stringByAppendingPathComponent:@"Desktop/export"] stringByAppendingPathComponent:folderName];
+        NSString *outputFolder = [selectedOutputFolder stringByAppendingPathComponent:folderName];
         NSLog(@"outputFolder: %@" ,outputFolder);
         NSFileManager *man = [NSFileManager defaultManager];
         if (![man fileExistsAtPath:outputFolder]){

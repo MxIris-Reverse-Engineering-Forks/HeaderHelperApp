@@ -19,6 +19,7 @@ static NSString *const kApplicationSourcePredicateString = @"(kMDItemContentType
 - (void)classDumpBundlesInFolder:(NSString *)folderPath toPath:(NSString *)outputPath completion:(void(^)(void))completed;
 - (void)doStuffWithFile:(NSString *)file;
 - (void)processRootFolder:(NSString *)rootFolder withCompletion:(void(^)(BOOL success))block;
+- (void)processRootFolder:(NSString *)rootFolder withOutputFolder:(NSString *)selectedOutputFolder withCompletion:(void(^)(BOOL success))block;
 - (void)getFileEntitlements:(NSString *)inputFile withCompletion:(void(^)(NSString *entitlements))block;
 - (NSArray *)findXcodes;
 - (NSArray *)simRuntimes;
